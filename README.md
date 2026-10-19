@@ -1,24 +1,39 @@
 # vdisplay
 
-Tiny CLI that creates a `CGVirtualDisplay` — a real "extra monitor" that
-exists only in software — and keeps it alive while the process runs.
+A menubar app that gives your Mac a real "extra monitor" — created entirely
+in software via Apple's private `CGVirtualDisplay` API. No hardware, no
+drivers, no dummy adapter. Display lives while the app runs; Quit removes it.
 
-Built by reverse-engineering how BetterDisplay creates dummy displays:
-`CGVirtualDisplayDescriptor` → `CGVirtualDisplay initWithDescriptor:` →
-`CGVirtualDisplayMode` → `CGVirtualDisplaySettings` → `applySettings:`.
-Private API — local tooling only, not App Store–safe.
+Pattern adapted from Chromium's `virtual_display_util_mac.mm` (BSD-3) and
+KhaosT's CGVirtualDisplay headers.
 
-## Usage
+## Use cases
+
+- Record app demos on a dedicated screen — `screencapture -D2`,
+  ScreenCaptureKit, or `ffmpeg -f avfoundation -i "2:none"` captures it while
+  your real display stays private.
+- Park reference windows on a second screen without owning a monitor.
+- Test multi-monitor layouts.
+
+## Build & run
 
 ```sh
-make            # builds ./vdisplay
-./vdisplay      # 1920×1080, default
-./vdisplay 2560 1440
+make            # builds Build/vdisplay.app
+make run        # build + open
+make clean
 ```
 
-While running, the display shows up in System Settings → Displays and is
-addressable by `screencapture -D<n>` / ScreenCaptureKit like a real one.
-Ctrl-C removes it.
+Or drag `Build/vdisplay.app` into /Applications and launch normally.
 
-Use case: recording app demos — put app windows on the virtual display,
-record that display; the user's main session is untouched.
+## What you get
+
+- Menubar item (display icon) — click to see status / Quit (⌘Q)
+- One virtual display, 1920×1080 @ 60Hz, non-HiDPI
+- Shows up in System Settings → Displays like a real monitor
+- Ctrl-C/quitting the app instantly removes the display; any windows on it
+  fall back to the main screen
+
+## Requirements
+
+macOS 14+, Apple Silicon. Private API — works on current macOS 26/27 builds,
+may break with future updates.

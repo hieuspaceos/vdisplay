@@ -1,10 +1,29 @@
 APP      := vdisplay
-SRC      := Sources/main.swift
+BUILD    := Build
+BUNDLE   := $(BUILD)/$(APP).app
+SRC      := $(wildcard Sources/*.swift)
+SDK      := $(shell xcrun --show-sdk-path)
+TARGET   := arm64-apple-macosx14.0
 
-all: $(APP)
+.PHONY: all clean run
+all: $(BUNDLE)
 
-$(APP): $(SRC)
-	swiftc -O -o $(APP) $(SRC)
+$(BUNDLE): $(SRC) Info.plist
+	@mkdir -p "$(BUNDLE)/Contents/MacOS"
+	swiftc -O -swift-version 5 \
+		-sdk "$(SDK)" -target "$(TARGET)" \
+		-module-name $(APP) \
+		$(SRC) \
+		-o "$(BUNDLE)/Contents/MacOS/$(APP)"
+	cp Info.plist "$(BUNDLE)/Contents/Info.plist"
+	@mkdir -p "$(BUNDLE)/Contents/Resources" "$(BUILD)/AppIcon.iconset"
+	swift tools/make_icon.swift "$(BUILD)/AppIcon.iconset" >/dev/null
+	iconutil -c icns "$(BUILD)/AppIcon.iconset" -o "$(BUNDLE)/Contents/Resources/AppIcon.icns"
+	codesign --force --deep --sign - "$(BUNDLE)" 2>/dev/null || true
+	@echo "Built $(BUNDLE)"
+
+run: $(BUNDLE)
+	open "$(BUNDLE)"
 
 clean:
-	rm -f $(APP)
+	rm -rf "$(BUILD)"
